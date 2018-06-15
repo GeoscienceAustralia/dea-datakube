@@ -1,0 +1,54 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: datacube-init
+spec:
+  template:
+    spec:
+      containers:
+      - name: datacube-init
+        image: opendatacube/wms:1.5.4
+        env:
+        - name: WMS_CONFIG_URL
+          value: https://raw.githubusercontent.com/GeoscienceAustralia/dea-config/master/prod/services/wms/nrt/wms_cfg.py
+        - name: DC_S3_INDEX_BUCKET
+          value: dea-public-data
+        - name: DC_S3_INDEX_PREFIX
+          value: projects/2018-04-MDBA/
+        - name: DC_S3_INDEX_SUFFIX
+          value: ARD-METADATA.yaml
+        - name: DB_HOSTNAME
+          value: dc-nrt-postgresql.default.svc.cluster.local
+        - name: DB_PORT
+          value: "5432"
+        - name: DB_DATABASE
+          value: postgres
+        - name: DB_USERNAME
+          value: postgres
+        - name: DB_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: dc-nrt-postgresql
+              key: postgres-password
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+              name: awscredentials
+              key: access-key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+              name: awscredentials
+              key: secret-key
+        volumeMounts:
+        - mountPath: /opt
+          name: dea-config
+        workingDir: /opt/dea-config/scripts
+        args: ["/bin/bash", "install-wms.sh"]
+      restartPolicy: Never
+      volumes:
+      - name: dea-config
+        gitRepo:
+          repository: "https://github.com/GeoscienceAustralia/dea-config.git"
+          revision: "b464a8a807d18b98ee8519e7b1609add8e0c95cc"
+  backoffLimit: 4
