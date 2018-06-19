@@ -1,0 +1,13 @@
+******************************************************************************
+*** PLEASE BE PATIENT: The datacube index can take a few hours to generate ***
+******************************************************************************
+
+You can watch the job status with:
+
+  kubectl get pods --namespace {{ .Release.Namespace }} --watch
+
+You can watch the logs with:
+
+  kubectl logs {{.Release.Name}} --namespace {{ .Release.Namespace }} -f
+
+  

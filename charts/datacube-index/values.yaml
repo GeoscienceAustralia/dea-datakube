@@ -1,0 +1,50 @@
+# Default values for datacube-index.
+# This is a YAML-formatted file.
+# Declare variables to be passed into your templates.
+replicaCount: 1
+image:
+  repository: opendatacube/wms
+  tag: '1.5.4'
+  pullPolicy: IfNotPresent
+##
+## AWS Access Keys
+##
+## These keys are used to read from the s3 bucket holding your COGs
+aws:
+  enabled: true
+  accessKey:
+  secretKey:
+  fromSecret: aws
+
+##
+## External Database config
+##
+## If postgresql is set to false, you will need external connection params
+# externalDatabase:
+  # host:
+  # user:
+  # password:
+  # database:
+
+postgresql:
+  enabled: true
+  postgresDatabase: datacubewms
+  postgresUser: postgres
+  postgresPassword: datacube,123
+
+s3:
+  bucket: dea-public-data 
+  path: projects/2018-04-MDBA/
+  suffix: ARD-METADATA.yaml
+
+resources:
+  # We usually recommend not to specify default resources and to leave this as a conscious
+  # choice for the user. This also increases chances charts run on environments with little
+  # resources, such as Minikube. If you do want to specify resources, uncomment the following
+  # lines, adjust them as necessary, and remove the curly braces after 'resources:'.
+  # limits:
+  #  cpu: 100m
+  #  memory: 128Mi
+  requests:
+    cpu: 300m
+    memory: 2048Mi

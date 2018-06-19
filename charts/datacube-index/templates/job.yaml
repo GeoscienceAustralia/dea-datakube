@@ -1,0 +1,99 @@
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: "{{.Release.Name}}"
+  labels:
+    heritage: {{.Release.Service | quote }}
+    release: {{.Release.Name | quote }}
+    chart: "{{.Chart.Name}}-{{.Chart.Version}}"
+  annotations:
+    # This is what defines this resource as a hook. Without this line, the
+    # job is considered part of the release.
+  {{- if .Values.postgresql.enabled }}
+    "helm.sh/hook": post-install
+    "helm.sh/hook-weight": "1"
+    "helm.sh/hook-delete-policy": hook-succeeded, hook-failed
+  {{- end }}
+spec:
+  template:
+    metadata:
+      name: "{{.Release.Name}}"
+      labels:
+        heritage: {{.Release.Service | quote }}
+        release: {{.Release.Name | quote }}
+        chart: "{{.Chart.Name}}-{{.Chart.Version}}"
+    spec:
+      initContainers:
+      - name: postgres-listener
+        image: alpine
+        command: ["sh", "-c", "for i in $(seq 1 200); do nc -z -w3 {{ template "datacube-index.postgresql.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local 5432 && exit 0 || sleep 3; done; exit 1"]
+      containers:
+      - name: datacube-init
+        image: opendatacube/wms:1.5.4
+        env:
+        - name: DC_S3_INDEX_BUCKET
+          value: {{ default "" .Values.s3.bucket | quote }}
+        - name: DC_S3_INDEX_PREFIX
+          value: {{ default "" .Values.s3.path | quote }}
+        - name: DC_S3_INDEX_SUFFIX
+          value: {{ default "" .Values.s3.suffix | quote }}
+        - name: DB_HOSTNAME
+        {{- if .Values.postgresql.enabled }}
+          value: {{ template "datacube-index.postgresql.fullname" . }}.{{ .Release.Namespace }}.svc.cluster.local
+        {{- else }}
+          value: {{ default "" .Values.externalDatabase.host | quote }}
+        {{- end }}
+        - name: DB_DATABASE
+        {{- if .Values.postgresql.enabled }}
+          value: {{ default "" .Values.postgresql.postgresDatabase | quote }}
+        {{- else }}
+          value: {{ default "" .Values.externalDatabase.database | quote }}
+        {{- end }}        
+        - name: DB_USERNAME
+        {{- if .Values.postgresql.enabled }}
+          value: {{ default "" .Values.postgresql.postgresUser | quote }}
+        {{- else }}
+          value: {{ default "" .Values.externalDatabase.username | quote }}          
+        {{- end }}  
+        - name: DB_PASSWORD
+        {{- if .Values.postgresql.enabled }}
+          valueFrom:
+            secretKeyRef:
+              name: {{ template "datacube-index.fullname" . }}
+              key: postgres-password
+        {{- else }}
+          value: {{ default "" .Values.externalDatabase.password | quote }}          
+        {{- end }}
+        - name: DB_PORT
+          value: '5432'
+        - name: VIRTUAL_HOST
+          value: localhost,127.0.0.
+        - name: AWS_ACCESS_KEY_ID
+          valueFrom:
+            secretKeyRef:
+            {{- if .Values.aws.enabled }}
+              name: {{ template "datacube-index.fullname" . }}
+            {{- else }}
+              name: {{ default "" .Values.aws.fromSecret | quote }}
+            {{- end }}
+              key: aws-access-key
+        - name: AWS_SECRET_ACCESS_KEY
+          valueFrom:
+            secretKeyRef:
+            {{- if .Values.aws.enabled }}
+              name: {{ template "datacube-index.fullname" . }}
+            {{- else }}
+              name: {{ default "" .Values.aws.fromSecret | quote }}
+            {{- end }}
+              key: aws-secret-key
+        volumeMounts:
+        - mountPath: /opt
+          name: files
+        workingDir: /opt
+        args: ["/bin/bash", install.sh]
+      restartPolicy: Never
+      volumes:
+      - name: files
+        configMap:
+          name: {{ template "datacube-index.fullname" . }}-files
+  backoffLimit: 2

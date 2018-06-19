@@ -1,0 +1,19 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: {{ template "datacube-index.fullname" . }}-files
+data:
+  install.sh: |
+{{ .Files.Get "files/install.sh" | indent 4 }}
+  update_ranges.sh: |
+{{ .Files.Get "files/update_ranges.sh" | indent 4 }}
+  update_ranges_wrapper.sh: |
+{{ .Files.Get "files/update_ranges_wrapper.sh" | indent 4 }}
+  wms_cfg.py: |
+{{ .Files.Get "files/wms_cfg.py" | indent 4 }}
+  product-nrt-ls8.yaml: |
+{{ .Files.Get "files/product-nrt-ls8.yaml" | indent 4 }}
+  product-nrt-s2.yaml: |
+{{ .Files.Get "files/product-nrt-s2.yaml" | indent 4 }}  
+  s3_cog.py: |
+{{ .Files.Get "files/s3_cog.py" | indent 4 }}
