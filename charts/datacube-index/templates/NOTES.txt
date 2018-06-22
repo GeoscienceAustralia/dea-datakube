@@ -8,6 +8,6 @@ You can watch the job status with:
 
 You can watch the logs with:
 
-  kubectl logs {{.Release.Name}} --namespace {{ .Release.Namespace }} -f
+  kubectl logs jobs/{{.Release.Name}} --namespace {{ .Release.Namespace }} -f
 
   

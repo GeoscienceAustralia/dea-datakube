@@ -6,14 +6,6 @@ metadata:
     heritage: {{.Release.Service | quote }}
     release: {{.Release.Name | quote }}
     chart: "{{.Chart.Name}}-{{.Chart.Version}}"
-  annotations:
-    # This is what defines this resource as a hook. Without this line, the
-    # job is considered part of the release.
-  {{- if .Values.postgresql.enabled }}
-    "helm.sh/hook": post-install
-    "helm.sh/hook-weight": "1"
-    "helm.sh/hook-delete-policy": hook-succeeded, hook-failed
-  {{- end }}
 spec:
   template:
     metadata:
@@ -31,6 +23,8 @@ spec:
       - name: datacube-init
         image: opendatacube/wms:1.5.4
         env:
+        - name: WMS_CONFIG_URL
+          value: {{ default "" .Values.wmsConfig | quote }}
         - name: DC_S3_INDEX_BUCKET
           value: {{ default "" .Values.s3.bucket | quote }}
         - name: DC_S3_INDEX_PREFIX
@@ -68,29 +62,10 @@ spec:
           value: '5432'
         - name: VIRTUAL_HOST
           value: localhost,127.0.0.
-        - name: AWS_ACCESS_KEY_ID
-          valueFrom:
-            secretKeyRef:
-            {{- if .Values.aws.enabled }}
-              name: {{ template "datacube-index.fullname" . }}
-            {{- else }}
-              name: {{ default "" .Values.aws.fromSecret | quote }}
-            {{- end }}
-              key: aws-access-key
-        - name: AWS_SECRET_ACCESS_KEY
-          valueFrom:
-            secretKeyRef:
-            {{- if .Values.aws.enabled }}
-              name: {{ template "datacube-index.fullname" . }}
-            {{- else }}
-              name: {{ default "" .Values.aws.fromSecret | quote }}
-            {{- end }}
-              key: aws-secret-key
         volumeMounts:
-        - mountPath: /opt
+        - mountPath: /code/indexing
           name: files
-        workingDir: /opt
-        args: ["/bin/bash", install.sh]
+        args: ["/bin/bash", indexing/install.sh]
       restartPolicy: Never
       volumes:
       - name: files

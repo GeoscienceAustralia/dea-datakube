@@ -62,10 +62,11 @@ do
     else
         suffix_string="${suffixes[$i]}"
     fi
-    python3 s3_cog.py "$b" --prefix "${prefixes[$i]}" ${suffix_string:+"--suffix"} ${suffix_string:+"$suffix_string"} ${safety_arg:+"$safety_arg"}
+    python3 indexing/s3_cog.py "$b" --prefix "${prefixes[$i]}" ${suffix_string:+"--suffix"} ${suffix_string:+"$suffix_string"} ${safety_arg:+"$safety_arg"}
 done
+
 
 # update ranges in wms database
 
-python3 /code/update_ranges.py ${product:+"--product"} ${product:+"$product"}
+python3 update_ranges.py ${product:+"--product"} ${product:+"$product"}
 

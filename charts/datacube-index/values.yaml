@@ -6,15 +6,12 @@ image:
   repository: opendatacube/wms
   tag: '1.5.4'
   pullPolicy: IfNotPresent
-##
-## AWS Access Keys
-##
-## These keys are used to read from the s3 bucket holding your COGs
-aws:
+
+postgresql:
   enabled: true
-  accessKey:
-  secretKey:
-  fromSecret: aws
+  postgresDatabase: datacubewms
+  postgresUser: postgres
+  postgresPassword: datacube,123
 
 ##
 ## External Database config
@@ -26,17 +23,12 @@ aws:
   # password:
   # database:
 
-postgresql:
-  enabled: true
-  postgresDatabase: datacubewms
-  postgresUser: postgres
-  postgresPassword: datacube,123
-
 s3:
   bucket: dea-public-data 
   path: projects/2018-04-MDBA/
   suffix: ARD-METADATA.yaml
 
+wmsConfig: https://raw.githubusercontent.com/GeoscienceAustralia/dea-config/master/prod/services/wms/nrt/wms_cfg.py
 resources:
   # We usually recommend not to specify default resources and to leave this as a conscious
   # choice for the user. This also increases chances charts run on environments with little
